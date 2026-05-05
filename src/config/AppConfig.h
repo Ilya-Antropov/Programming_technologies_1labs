@@ -14,6 +14,12 @@ public:
 
     static AppConfig& instance();
 
+    void load(const QString& iniPath);
+
+    int pollIntervalMs() const;
+
+    QString logLevel() const;
+
 private:
     AppConfig();
 
