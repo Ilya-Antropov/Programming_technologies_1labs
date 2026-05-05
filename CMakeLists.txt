@@ -7,6 +7,12 @@ set(CMAKE_AUTOMOC ON)
 set(CMAKE_AUTORCC ON)
 set(CMAKE_AUTOUIC ON)
 
+include_directories(src/logger)
+
+SET(SOURCES
+        main.cpp
+        src/logger/AppLogger.cpp
+)
 
 find_package(Qt5 COMPONENTS
         Core
@@ -15,7 +21,7 @@ find_package(Qt${QT_VERSION_MAJOR} COMPONENTS
         Core
         REQUIRED)
 
-add_executable(${PROJECT_NAME} main.cpp)
+add_executable(${PROJECT_NAME} ${SOURCES})
 target_link_libraries(${PROJECT_NAME}
         PRIVATE
         Qt${QT_VERSION_MAJOR}::Core
