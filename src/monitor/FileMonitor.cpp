@@ -17,3 +17,32 @@ void FileMonitor::setNotifier(IntNotifier* notifier) {
     std::lock_guard<std::mutex> lock(m_mutex);
     m_notifier = notifier;
 }
+
+bool FileMonitor::addFile(const QString& filePath) {
+    if (filePath.trimmed().isEmpty()) {
+        AppLogger::instance().warning(
+            QStringLiteral("FileMonitor::addFile: пустой путь"));
+        return false;
+    }
+
+    QFileInfo info(filePath);
+    if (info.exists() && !info.isFile()) {
+        AppLogger::instance().warning(
+            QStringLiteral("FileMonitor::addFile: '%1' — не файл (директория?)")
+            .arg(filePath));
+        return false;
+    }
+
+    std::lock_guard<std::mutex> lock(m_mutex);
+    if (m_files.contains(filePath)) {
+        AppLogger::instance().warning(
+            QStringLiteral("FileMonitor::addFile: '%1' уже наблюдается")
+            .arg(filePath));
+        return false;
+    }
+
+    m_files.append(filePath);
+    AppLogger::instance().info(
+        QStringLiteral("Добавлен в мониторинг: '%1'").arg(filePath));
+    return true;
+}

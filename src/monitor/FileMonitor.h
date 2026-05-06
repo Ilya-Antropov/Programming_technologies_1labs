@@ -10,7 +10,7 @@
 
 class FileMonitor : public QObject {
     Q_OBJECT
-    Q_DISABLE_COPY(FileMonitor)
+    Q_DISABLE_COPY(FileMonitor);
 
 public:
     explicit FileMonitor(QObject* parent = nullptr);
@@ -20,6 +20,8 @@ public:
     void addChecker(std::unique_ptr<IntFileChecker> checker);
 
     void setNotifier(IntNotifier* notifier);
+
+    bool addFile(const QString& filePath);
 
     signals:
     // будут добавлены
