@@ -1,25 +1,49 @@
-#include "AppLogger.h"
 #include <QCoreApplication>
-#include <thread>
-#include <vector>
+#include <QTimer>
+#include <QFile>
+#include "logger/AppLogger.h"
+#include "config/AppConfig.h"
+#include "checker/ExistenceWatcher.h"
+#include "notifier/ConsoleNotifier.h"
 
-// сделал чисто для проверки(можно не смотреть)
+// накикунл вариант, чтобы проверить (можно не смотреть)
 int main(int argc, char* argv[]) {
     QCoreApplication app(argc, argv);
 
-    AppLogger& logger = AppLogger::instance();
-
+    auto& logger = AppLogger::instance();
     logger.setLevel(LogLevel::DEBUG_LVL);
-    logger.debug("Отладка: инициализация");
-    logger.info("Информация: старт");
-    logger.warning("Предупреждение: что-то не так");
-    logger.error("Ошибка: сбой");
+    logger.info("Программа запущена");
 
-    logger.setLevel(LogLevel::INFO);
-    logger.debug("Эта строка не появится (уровень ниже INFO)");
-    logger.info("Эта строка появится (INFO)");
-    logger.warning("Предупреждение выводится всегда, если >= INFO");
-    logger.error("Ошибка выводится");
+    auto& config = AppConfig::instance();
+    config.load("config.ini");
+    logger.debug("Интервал опроса: " + QString::number(config.pollIntervalMs()));
 
-    return 0;
+    ExistenceWatcher watcher;
+    ConsoleNotifier notifier;
+
+    const QStringList watchedFiles = {"test.txt", "test2.txt"};
+
+    for (const QString& path : watchedFiles) {
+        QFile file(path);
+        if (!file.exists()) {
+            logger.warning("Файл " + path + " не существует, создаём пустой");
+            file.open(QIODevice::WriteOnly);
+            file.close();
+        }
+    }
+
+    QTimer timer;
+    QObject::connect(&timer, &QTimer::timeout, [&]() {
+        for (const QString& path : watchedFiles) {
+            CheckResult result = watcher.check(path);
+            if (result.event != CheckEvent::NONE) {
+                notifier.notify(result);
+            }
+        }
+    });
+    timer.start(config.pollIntervalMs());
+
+    QTimer::singleShot(20000, &app, &QCoreApplication::quit);
+    logger.info("Наблюдение за test.txt и test2.txt начато.");
+    return app.exec();
 }

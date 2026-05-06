@@ -17,7 +17,20 @@ CheckResult ExistenceWatcher::check(const QString& filePath) {
         return CheckResult(CheckEvent::FILE_DELETED, filePath);
     }
 
-    // еще добавиться сравнение следующих опросов с предыдущим
+    const bool wasExists = m_lastExists.value(filePath, false);
+    if (wasExists == exists) {
+        return CheckResult(CheckEvent::NONE, filePath);
+    }
+
+    m_lastExists[filePath] = exists;
+
+    if (!exists) {
+        return CheckResult(CheckEvent::FILE_DELETED, filePath);
+    }
+    return CheckResult(CheckEvent::NONE, filePath);
 }
 
-// тут будет еще reset
+void ExistenceWatcher::reset(const QString& filePath) {
+    m_lastExists.remove(filePath);
+    m_firstCheck.remove(filePath);
+}
