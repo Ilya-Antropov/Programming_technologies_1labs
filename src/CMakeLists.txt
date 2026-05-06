@@ -6,6 +6,7 @@ set(SOURCES
         checker/ExistenceWatcher.cpp
         checker/SizeWatcher.cpp
         checker/RestorationWatcher.cpp
+        monitor/FileMonitor.cpp
 )
 
 set(HEADERS
@@ -17,6 +18,7 @@ set(HEADERS
         checker/ExistenceWatcher.h
         checker/SizeWatcher.h
         checker/RestorationWatcher.h
+        monitor/FileMonitor.h
 )
 
 add_executable(programing_1labs ${SOURCES} ${HEADERS})
