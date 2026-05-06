@@ -12,8 +12,6 @@ if (CMAKE_CXX_COMPILER_ID MATCHES "GNU|Clang")
     add_compile_options(-Wall -Wextra -Wpedantic)
 endif ()
 
-include_directories(src/logger)
-
 find_package(QT NAMES Qt6 Qt5 REQUIRED COMPONENTS Core)
 find_package(Qt${QT_VERSION_MAJOR} REQUIRED COMPONENTS Core)
 message(STATUS "Using Qt${QT_VERSION_MAJOR}")

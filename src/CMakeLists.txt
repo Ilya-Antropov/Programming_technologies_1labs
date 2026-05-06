@@ -4,6 +4,7 @@ set(SOURCES
         logger/AppLogger.cpp
         notifier/ConsoleNotifier.cpp
         checker/ExistenceWatcher.cpp
+        checker/SizeWatcher.cpp
 )
 
 set(HEADERS

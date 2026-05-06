@@ -4,9 +4,9 @@
 #include "logger/AppLogger.h"
 #include "config/AppConfig.h"
 #include "checker/ExistenceWatcher.h"
+#include "checker/SizeWatcher.h"
 #include "notifier/ConsoleNotifier.h"
 
-// накикунл вариант, чтобы проверить (можно не смотреть)
 int main(int argc, char* argv[]) {
     QCoreApplication app(argc, argv);
 
@@ -18,7 +18,8 @@ int main(int argc, char* argv[]) {
     config.load("config.ini");
     logger.debug("Интервал опроса: " + QString::number(config.pollIntervalMs()));
 
-    ExistenceWatcher watcher;
+    SizeWatcher sizeWatcher;
+    ExistenceWatcher existenceWatcher;
     ConsoleNotifier notifier;
 
     const QStringList watchedFiles = {"test.txt", "test2.txt"};
@@ -35,9 +36,14 @@ int main(int argc, char* argv[]) {
     QTimer timer;
     QObject::connect(&timer, &QTimer::timeout, [&]() {
         for (const QString& path : watchedFiles) {
-            CheckResult result = watcher.check(path);
-            if (result.event != CheckEvent::NONE) {
-                notifier.notify(result);
+            CheckResult existenceResult = existenceWatcher.check(path);
+            if (existenceResult.event != CheckEvent::NONE) {
+                notifier.notify(existenceResult);
+            }
+
+            CheckResult sizeResult = sizeWatcher.check(path);
+            if (sizeResult.event != CheckEvent::NONE) {
+                notifier.notify(sizeResult);
             }
         }
     });
