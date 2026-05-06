@@ -3,6 +3,7 @@ set(SOURCES
         config/AppConfig.cpp
         logger/AppLogger.cpp
         notifier/ConsoleNotifier.cpp
+        checker/ExistenceWatcher.cpp
 )
 
 set(HEADERS
@@ -11,6 +12,7 @@ set(HEADERS
         checker/IntFileChecker.h
         notifier/IntNotifier.h
         notifier/ConsoleNotifier.h
+        checker/ExistenceWatcher.h
 )
 
 add_executable(programing_1labs ${SOURCES} ${HEADERS})
