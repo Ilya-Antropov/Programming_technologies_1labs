@@ -13,6 +13,7 @@ set(HEADERS
         notifier/IntNotifier.h
         notifier/ConsoleNotifier.h
         checker/ExistenceWatcher.h
+        checker/SizeWatcher.h
 )
 
 add_executable(programing_1labs ${SOURCES} ${HEADERS})
