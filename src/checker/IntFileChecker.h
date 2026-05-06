@@ -21,6 +21,15 @@ struct CheckResult {
                          const QString& p = {},
                          qint64 sz = -1,
                          qint64 old = -1)
-        : event(e), path(p), size(sz), oldSize(old)
-    {}
+        : event(e), path(p), size(sz), oldSize(old) {
+    }
+};
+
+class IntFileChecker {
+public:
+    virtual ~IntFileChecker() = default;
+
+    virtual CheckResult check(const QString& filePath) = 0;
+
+    virtual void reset(const QString& filePath) = 0;
 };
