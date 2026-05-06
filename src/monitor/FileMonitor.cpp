@@ -46,3 +46,29 @@ bool FileMonitor::addFile(const QString& filePath) {
         QStringLiteral("Добавлен в мониторинг: '%1'").arg(filePath));
     return true;
 }
+
+bool FileMonitor::removeFile(const QString& filePath) {
+    std::lock_guard<std::mutex> lock(m_mutex);
+    const int idx = m_files.indexOf(filePath);
+    if (idx < 0) { return false; }
+
+    m_files.removeAt(idx);
+    for (auto& checker : m_checkers) {
+        checker->reset(filePath);
+    }
+
+    AppLogger::instance().info(
+        QStringLiteral("Удалён из мониторинга: '%1'").arg(filePath));
+
+    return true;
+}
+
+QVector<QString> FileMonitor::watchedFiles() const {
+    std::lock_guard<std::mutex> lock(m_mutex);
+    return m_files;
+}
+
+bool FileMonitor::isEmpty() const {
+    std::lock_guard<std::mutex> lock(m_mutex);
+    return m_files.isEmpty();
+}

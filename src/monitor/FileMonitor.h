@@ -23,6 +23,12 @@ public:
 
     bool addFile(const QString& filePath);
 
+    bool removeFile(const QString& filePath);
+
+    bool isEmpty() const;
+
+    QVector<QString> watchedFiles() const;
+
     signals:
     // будут добавлены
 
