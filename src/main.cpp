@@ -6,6 +6,7 @@
 #include "checker/ExistenceWatcher.h"
 #include "checker/SizeWatcher.h"
 #include "notifier/ConsoleNotifier.h"
+#include "checker/RestorationWatcher.h"
 
 int main(int argc, char* argv[]) {
     QCoreApplication app(argc, argv);
@@ -20,6 +21,7 @@ int main(int argc, char* argv[]) {
 
     SizeWatcher sizeWatcher;
     ExistenceWatcher existenceWatcher;
+    RestorationWatcher restorationWatcher;
     ConsoleNotifier notifier;
 
     const QStringList watchedFiles = {"test.txt", "test2.txt"};
@@ -45,11 +47,16 @@ int main(int argc, char* argv[]) {
             if (sizeResult.event != CheckEvent::NONE) {
                 notifier.notify(sizeResult);
             }
+
+            CheckResult restorationResult = restorationWatcher.check(path);
+            if (restorationResult.event != CheckEvent::NONE) {
+                notifier.notify(restorationResult);
+            }
         }
     });
     timer.start(config.pollIntervalMs());
 
-    QTimer::singleShot(20000, &app, &QCoreApplication::quit);
+    QTimer::singleShot(40000, &app, &QCoreApplication::quit);
     logger.info("Наблюдение за test.txt и test2.txt начато.");
     return app.exec();
 }

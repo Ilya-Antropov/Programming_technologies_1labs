@@ -5,6 +5,7 @@ set(SOURCES
         notifier/ConsoleNotifier.cpp
         checker/ExistenceWatcher.cpp
         checker/SizeWatcher.cpp
+        checker/RestorationWatcher.cpp
 )
 
 set(HEADERS
