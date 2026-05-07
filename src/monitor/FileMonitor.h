@@ -5,6 +5,7 @@
 #include <QString>
 #include <memory>
 #include <mutex>
+#include <vector>
 #include "../checker/IntFileChecker.h"
 #include "../notifier/IntNotifier.h"
 
@@ -29,12 +30,19 @@ public:
 
     QVector<QString> watchedFiles() const;
 
+    void pollOnce();
+
     signals:
-    // будут добавлены
+
+
+
+    void watchListBecameEmpty();
+
+    void fileEventDetected(CheckResult result);
 
 private:
     QVector<QString> m_files;
-    QVector<std::unique_ptr<IntFileChecker> > m_checkers;
+    std::vector<std::unique_ptr<IntFileChecker> > m_checkers;
     IntNotifier* m_notifier;
     mutable std::mutex m_mutex;
 };

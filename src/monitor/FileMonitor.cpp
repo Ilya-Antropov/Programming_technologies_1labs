@@ -2,6 +2,7 @@
 #include <QFileInfo>
 #include <algorithm>
 #include "FileMonitor.h"
+#include "../logger/AppLogger.h"
 
 FileMonitor::FileMonitor(QObject* parent)
     : QObject(parent)
@@ -60,6 +61,10 @@ bool FileMonitor::removeFile(const QString& filePath) {
     AppLogger::instance().info(
         QStringLiteral("Удалён из мониторинга: '%1'").arg(filePath));
 
+    if (m_files.isEmpty()) {
+        emit watchListBecameEmpty();
+    }
+
     return true;
 }
 
@@ -71,4 +76,24 @@ QVector<QString> FileMonitor::watchedFiles() const {
 bool FileMonitor::isEmpty() const {
     std::lock_guard<std::mutex> lock(m_mutex);
     return m_files.isEmpty();
+}
+
+void FileMonitor::pollOnce() {
+    std::lock_guard<std::mutex> lock(m_mutex);
+
+    for (const QString& path : m_files) {
+        for (auto& checker : m_checkers) {
+            CheckResult result = checker->check(path);
+
+            if (result.event == CheckEvent::NONE) {
+                continue;
+            }
+
+            emit fileEventDetected(result);
+
+            if (m_notifier != nullptr) {
+                m_notifier->notify(result);
+            }
+        }
+    }
 }
