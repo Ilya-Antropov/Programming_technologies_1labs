@@ -8,6 +8,7 @@ set(SOURCES
         checker/RestorationWatcher.cpp
         monitor/FileMonitor.cpp
         monitor/PollWorker.cpp
+        shell/ConsoleShell.cpp
 )
 
 set(HEADERS
@@ -21,6 +22,7 @@ set(HEADERS
         checker/RestorationWatcher.h
         monitor/FileMonitor.h
         monitor/PollWorker.h
+        shell/ConsoleShell.h
 )
 
 add_executable(programing_1labs ${SOURCES} ${HEADERS})
