@@ -7,6 +7,7 @@ set(SOURCES
         checker/SizeWatcher.cpp
         checker/RestorationWatcher.cpp
         monitor/FileMonitor.cpp
+        monitor/PollWorker.cpp
 )
 
 set(HEADERS
@@ -19,6 +20,7 @@ set(HEADERS
         checker/SizeWatcher.h
         checker/RestorationWatcher.h
         monitor/FileMonitor.h
+        monitor/PollWorker.h
 )
 
 add_executable(programing_1labs ${SOURCES} ${HEADERS})
