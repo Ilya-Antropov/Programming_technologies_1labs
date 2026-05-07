@@ -5,9 +5,12 @@
 #include "config/AppConfig.h"
 #include "checker/ExistenceWatcher.h"
 #include "checker/SizeWatcher.h"
-#include "notifier/ConsoleNotifier.h"
 #include "checker/RestorationWatcher.h"
+#include "notifier/ConsoleNotifier.h"
+#include "monitor/FileMonitor.h"
+#include "monitor/PollWorker.h"
 
+// реализация для проверки чисто (можно не смотреть)
 int main(int argc, char* argv[]) {
     QCoreApplication app(argc, argv);
 
@@ -17,46 +20,47 @@ int main(int argc, char* argv[]) {
 
     auto& config = AppConfig::instance();
     config.load("config.ini");
+    int pollInterval = config.pollIntervalMs();
     logger.debug("Интервал опроса: " + QString::number(config.pollIntervalMs()));
 
-    SizeWatcher sizeWatcher;
-    ExistenceWatcher existenceWatcher;
-    RestorationWatcher restorationWatcher;
+    FileMonitor monitor;
+
+    monitor.addChecker(std::make_unique<ExistenceWatcher>());
+    monitor.addChecker(std::make_unique<SizeWatcher>());
+    monitor.addChecker(std::make_unique<RestorationWatcher>());
+
     ConsoleNotifier notifier;
+    monitor.setNotifier(&notifier);
 
     const QStringList watchedFiles = {"test.txt", "test2.txt"};
-
     for (const QString& path : watchedFiles) {
         QFile file(path);
         if (!file.exists()) {
             logger.warning("Файл " + path + " не существует, создаём пустой");
-            file.open(QIODevice::WriteOnly);
+            if (!file.open(QIODevice::WriteOnly)) {
+                logger.error("Не удалось создать файл " + path);
+                return 1;
+            }
             file.close();
+        }
+        if (!monitor.addFile(path)) {
+            logger.error("Не удалось добавить файл в мониторинг: " + path);
         }
     }
 
-    QTimer timer;
-    QObject::connect(&timer, &QTimer::timeout, [&]() {
-        for (const QString& path : watchedFiles) {
-            CheckResult existenceResult = existenceWatcher.check(path);
-            if (existenceResult.event != CheckEvent::NONE) {
-                notifier.notify(existenceResult);
-            }
+    QObject::connect(&monitor, &FileMonitor::watchListBecameEmpty,
+                     [&]() {
+                         logger.info("Список файлов пуст, завершаем работу");
+                         QCoreApplication::quit();
+                     });
 
-            CheckResult sizeResult = sizeWatcher.check(path);
-            if (sizeResult.event != CheckEvent::NONE) {
-                notifier.notify(sizeResult);
-            }
+    PollWorker worker([&]() { monitor.pollOnce(); }, pollInterval);
+    worker.start();
+    logger.info("Мониторинг запущен через FileMonitor и PollWorker");
 
-            CheckResult restorationResult = restorationWatcher.check(path);
-            if (restorationResult.event != CheckEvent::NONE) {
-                notifier.notify(restorationResult);
-            }
-        }
-    });
-    timer.start(config.pollIntervalMs());
+    QTimer::singleShot(60000, &app, &QCoreApplication::quit);
+    int ret = app.exec();
+    worker.stop();
 
-    QTimer::singleShot(40000, &app, &QCoreApplication::quit);
-    logger.info("Наблюдение за test.txt и test2.txt начато.");
-    return app.exec();
+    return ret;
 }
