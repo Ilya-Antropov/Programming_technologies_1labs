@@ -101,3 +101,41 @@ void ConsoleShell::handleRemove(const QString& path) {
     }
     out.flush();
 }
+
+void ConsoleShell::handleList() {
+    QTextStream out(stdout);
+    const QVector<QString> files = m_monitor->watchedFiles();
+
+    if (files.isEmpty()) {
+        out << "  Список мониторинга пуст\n";
+    } else {
+        out << QStringLiteral("  Файлов: %1\n").arg(files.size());
+        for (const QString& f : files) {
+            out << QStringLiteral("    - %1\n").arg(f);
+        }
+    }
+    out.flush();
+}
+
+void ConsoleShell::handleStart(){
+    QTextStream out(stdout);
+
+    if (m_monitor->isEmpty()) {
+        out << "  Нет файлов. Добавьте командой 'add'\n";
+        out.flush();
+        return;
+    }
+
+    if (m_pollWorker && m_pollWorker->isRunning()) {
+        out << "  Мониторинг уже запущен\n";
+        out.flush();
+        return;
+    }
+
+    m_pollWorker = std::make_unique<PollWorker>(
+        [this]() { m_monitor->pollOnce(); },
+        m_pollIntervalMs);
+    m_pollWorker->start();
+
+    out << "  Мониторинг запущен\n"; out.flush();
+}
