@@ -61,3 +61,28 @@ void ConsoleShell::run() {
         }
     }
 }
+
+void ConsoleShell::handleAdd(const QString& path) {
+    QTextStream out(stdout);
+
+    if (path.isEmpty()) {
+        out << "  Ошибка: укажите путь\n";
+        out.flush();
+        return;
+    }
+
+    QFileInfo info(path);
+    if (info.exists() && !info.isFile()) {
+        out << QStringLiteral(
+            "  Ошибка: '%1' является директорией\n").arg(path);
+        out.flush();
+        return;
+    }
+
+    if (m_monitor->addFile(path)) {
+        out << QStringLiteral("  Добавлен: '%1'\n").arg(path);
+    } else {
+        out << QStringLiteral("  Не удалось добавить: '%1'\n").arg(path);
+    }
+    out.flush();
+}
