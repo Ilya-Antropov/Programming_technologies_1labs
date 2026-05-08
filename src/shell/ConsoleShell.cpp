@@ -86,3 +86,18 @@ void ConsoleShell::handleAdd(const QString& path) {
     }
     out.flush();
 }
+
+void ConsoleShell::handleRemove(const QString& path) {
+    QTextStream out(stdout);
+    if (path.isEmpty()) {
+        out << "  Ошибка: укажите путь\n";
+        out.flush();
+        return;
+    }
+    if (m_monitor->removeFile(path)) {
+        out << QStringLiteral("  Удалён: '%1'\n").arg(path);
+    } else {
+        out << QStringLiteral("  Не найден: '%1'\n").arg(path);
+    }
+    out.flush();
+}
