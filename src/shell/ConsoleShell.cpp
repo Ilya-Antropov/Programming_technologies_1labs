@@ -43,7 +43,6 @@ void ConsoleShell::run() {
                                 ? line.mid(spaceIdx + 1).trimmed()
                                 : QString{};
 
-        // команды реализую чуть позже
         if (cmd == QStringLiteral("add")) { handleAdd(arg); } else if (
             cmd == QStringLiteral("remove")) { handleRemove(arg); } else if (
             cmd == QStringLiteral("list")) { handleList(); } else if (
@@ -117,7 +116,7 @@ void ConsoleShell::handleList() {
     out.flush();
 }
 
-void ConsoleShell::handleStart(){
+void ConsoleShell::handleStart() {
     QTextStream out(stdout);
 
     if (m_monitor->isEmpty()) {
@@ -137,5 +136,36 @@ void ConsoleShell::handleStart(){
         m_pollIntervalMs);
     m_pollWorker->start();
 
-    out << "  Мониторинг запущен\n"; out.flush();
+    out << "  Мониторинг запущен\n";
+    out.flush();
+}
+
+void ConsoleShell::handleStop() {
+    QTextStream out(stdout);
+
+    if (!m_pollWorker || !m_pollWorker->isRunning()) {
+        out << "  Мониторинг не запущен\n";
+        out.flush();
+        return;
+    }
+
+    m_pollWorker->stop();
+    out << "  Мониторинг остановлен\n";
+    out.flush();
+}
+
+void ConsoleShell::printHelp() {
+    QTextStream out(stdout);
+    out << "\n"
+        << "  ╔══════════════════════════════════════╗\n"
+        << "  ║        FileMonitor — Команды         ║\n"
+        << "  ╠══════════════════════════════════════╣\n"
+        << "  ║  add <путь>    — добавить файл       ║\n"
+        << "  ║  remove <путь> — удалить файл        ║\n"
+        << "  ║  list          — список файлов       ║\n"
+        << "  ║  start         — запустить опрос     ║\n"
+        << "  ║  stop          — остановить опрос    ║\n"
+        << "  ║  quit          — выход               ║\n"
+        << "  ╚══════════════════════════════════════╝\n";
+    out.flush();
 }
