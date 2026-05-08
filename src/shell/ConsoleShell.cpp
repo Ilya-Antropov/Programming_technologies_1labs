@@ -1,7 +1,14 @@
 #include <QString>
 #include <QFileInfo>
 #include <QTextStream>
+#include <cstdio>
 #include "ConsoleShell.h"
+
+static void printUtf8(const QString& s) {
+    const QByteArray bytes = s.toUtf8();
+    fwrite(bytes.constData(), 1, bytes.size(), stdout);
+    fflush(stdout);
+}
 
 ConsoleShell::ConsoleShell(FileMonitor* monitor,
                            IntNotifier* notifier,
@@ -15,9 +22,8 @@ ConsoleShell::ConsoleShell(FileMonitor* monitor,
                      this, [this]() {
                          if (m_pollWorker && m_pollWorker->isRunning()) {
                              m_pollWorker->stop();
-                             QTextStream out(stdout);
-                             out << "\n  [!] Список пуст - мониторинг остановлен.\n";
-                             out.flush();
+                             printUtf8(QStringLiteral(
+                                 "\n  [!] Список пуст - мониторинг остановлен.\n"));
                          }
                      });
 }
@@ -26,14 +32,20 @@ void ConsoleShell::run() {
     printHelp();
 
     QTextStream in(stdin);
-    QTextStream out(stdout);
+#if QT_VERSION < QT_VERSION_CHECK(6, 0, 0)
+    in.setCodec("UTF-8");
+#else
+    in.setEncoding(QStringConverter::Utf8);
+#endif
 
     while (true) {
-        out << "\n> ";
-        out.flush();
+        printf("\n> ");
+        fflush(stdout);
 
-        const QString line = in.readLine().trimmed();
+        QString line = in.readLine();
         if (line.isNull()) { break; }
+
+        line = line.trimmed().remove(QChar('\r')).remove(QChar('\0'));
         if (line.isEmpty()) { continue; }
 
         const int spaceIdx = line.indexOf(' ');
@@ -44,10 +56,15 @@ void ConsoleShell::run() {
                                 ? line.mid(spaceIdx + 1).trimmed()
                                 : QString{};
 
-        if (cmd == QStringLiteral("add")) { handleAdd(arg); } else if (
-            cmd == QStringLiteral("remove")) { handleRemove(arg); } else if (
-            cmd == QStringLiteral("list")) { handleList(); } else if (
-            cmd == QStringLiteral("start")) { handleStart(); } else if (cmd == QStringLiteral("stop")) {
+        if (cmd == QStringLiteral("add")) {
+            handleAdd(arg);
+        } else if (cmd == QStringLiteral("remove")) {
+            handleRemove(arg);
+        } else if (cmd == QStringLiteral("list")) {
+            handleList();
+        } else if (cmd == QStringLiteral("start")) {
+            handleStart();
+        } else if (cmd == QStringLiteral("stop")) {
             handleStop();
         } else if (cmd == QStringLiteral("help")
                    || cmd == QStringLiteral("?")) {
@@ -55,83 +72,76 @@ void ConsoleShell::run() {
         } else if (cmd == QStringLiteral("quit")
                    || cmd == QStringLiteral("exit")) {
             handleStop();
-            out << "  Мы закончили\n";
-            out.flush();
+            printUtf8(QStringLiteral("  Мы закончили\n"));
             break;
         } else {
-            out << "  Неизвестная команда -> Введите 'help'\n";
-            out.flush();
+            printUtf8(QStringLiteral(
+                "  Неизвестная команда -> Введите 'help'\n"));
         }
     }
 }
 
 void ConsoleShell::handleAdd(const QString& path) {
-    QTextStream out(stdout);
-
     if (path.isEmpty()) {
-        out << "  Ошибка: укажите путь\n";
-        out.flush();
+        printUtf8(QStringLiteral("  Ошибка: укажите путь\n"));
         return;
     }
 
     QFileInfo info(path);
+
     if (info.exists() && !info.isFile()) {
-        out << QStringLiteral(
-            "  Ошибка: '%1' является директорией\n").arg(path);
-        out.flush();
+        printUtf8(QStringLiteral(
+            "  Ошибка: '%1' является директорией\n").arg(path));
+        return;
+    }
+
+    if (!info.exists()) {
+        printUtf8(QStringLiteral(
+            "  Ошибка: файл '%1' не существует\n").arg(path));
         return;
     }
 
     if (m_monitor->addFile(path)) {
-        out << QStringLiteral("  Добавлен: '%1'\n").arg(path);
+        printUtf8(QStringLiteral("  Добавлен: '%1'\n").arg(path));
     } else {
-        out << QStringLiteral("  Не удалось добавить: '%1'\n").arg(path);
+        printUtf8(QStringLiteral("  Не удалось добавить: '%1'\n").arg(path));
     }
-    out.flush();
 }
 
 void ConsoleShell::handleRemove(const QString& path) {
-    QTextStream out(stdout);
     if (path.isEmpty()) {
-        out << "  Ошибка: укажите путь\n";
-        out.flush();
+        printUtf8(QStringLiteral("  Ошибка: укажите путь\n"));
         return;
     }
     if (m_monitor->removeFile(path)) {
-        out << QStringLiteral("  Удалён: '%1'\n").arg(path);
+        printUtf8(QStringLiteral("  Удалён: '%1'\n").arg(path));
     } else {
-        out << QStringLiteral("  Не найден: '%1'\n").arg(path);
+        printUtf8(QStringLiteral("  Не найден: '%1'\n").arg(path));
     }
-    out.flush();
 }
 
 void ConsoleShell::handleList() {
-    QTextStream out(stdout);
     const QVector<QString> files = m_monitor->watchedFiles();
 
     if (files.isEmpty()) {
-        out << "  Список мониторинга пуст\n";
+        printUtf8(QStringLiteral("  Список мониторинга пуст\n"));
     } else {
-        out << QStringLiteral("  Файлов: %1\n").arg(files.size());
+        printUtf8(QStringLiteral("  Файлов: %1\n").arg(files.size()));
         for (const QString& f : files) {
-            out << QStringLiteral("    - %1\n").arg(f);
+            printUtf8(QStringLiteral("    - %1\n").arg(f));
         }
     }
-    out.flush();
 }
 
 void ConsoleShell::handleStart() {
-    QTextStream out(stdout);
-
     if (m_monitor->isEmpty()) {
-        out << "  Нет файлов. Добавьте командой 'add'\n";
-        out.flush();
+        printUtf8(QStringLiteral(
+            "  Нет файлов. Добавьте командой 'add'\n"));
         return;
     }
 
     if (m_pollWorker && m_pollWorker->isRunning()) {
-        out << "  Мониторинг уже запущен\n";
-        out.flush();
+        printUtf8(QStringLiteral("  Мониторинг уже запущен\n"));
         return;
     }
 
@@ -140,22 +150,17 @@ void ConsoleShell::handleStart() {
         m_pollIntervalMs);
     m_pollWorker->start();
 
-    out << "  Мониторинг запущен\n";
-    out.flush();
+    printUtf8(QStringLiteral("  Мониторинг запущен\n"));
 }
 
 void ConsoleShell::handleStop() {
-    QTextStream out(stdout);
-
     if (!m_pollWorker || !m_pollWorker->isRunning()) {
-        out << "  Мониторинг не запущен\n";
-        out.flush();
+        printUtf8(QStringLiteral("  Мониторинг не запущен\n"));
         return;
     }
 
     m_pollWorker->stop();
-    out << "  Мониторинг остановлен\n";
-    out.flush();
+    printUtf8(QStringLiteral("  Мониторинг остановлен\n"));
 }
 
 void ConsoleShell::printHelp() {

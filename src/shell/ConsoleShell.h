@@ -33,6 +33,7 @@ private:
 
     void printHelp();
 
+
     FileMonitor* m_monitor;
     IntNotifier* m_notifier;
     std::unique_ptr<PollWorker> m_pollWorker;
