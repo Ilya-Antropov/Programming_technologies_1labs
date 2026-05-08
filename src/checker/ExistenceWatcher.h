@@ -4,7 +4,7 @@
 #include "IntFileChecker.h"
 #include <QMap>
 
-class ExistenceWatcher : public IntFileChecker{
+class ExistenceWatcher : public IntFileChecker {
 public:
     ExistenceWatcher() = default;
 
@@ -12,9 +12,8 @@ public:
 
     CheckResult check(const QString& filePath) override;
 
-    void reset(const QString &filePath) override;
+    void reset(const QString& filePath) override;
 
 private:
-    QMap<QString, bool> m_lastExists;
     QMap<QString, bool> m_firstCheck;
 };
