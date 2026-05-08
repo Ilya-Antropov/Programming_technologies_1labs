@@ -2,6 +2,7 @@
 
 #include <QString>
 #include <QMap>
+#include <QtCore/QDateTime>
 #include "IntFileChecker.h"
 
 
@@ -17,4 +18,5 @@ public:
 
 private:
     QMap<QString, qint64> m_lastSize;
+    QMap<QString, QDateTime> m_lastModified;
 };

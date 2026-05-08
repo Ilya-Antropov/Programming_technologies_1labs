@@ -23,6 +23,11 @@ QString ConsoleNotifier::formatMessage(const CheckResult& result) {
             return QStringLiteral("  [~] Файл изменён: '%1'  %2 -> %3 байт")
                 .arg(result.path).arg(result.oldSize).arg(result.size);
 
+        case CheckEvent::FILE_TOUCHED:
+            return QStringLiteral("  [≈] Файл изменён (без изменения размера): '%1'  (%2 байт)")
+                .arg(result.path)
+                .arg(result.size);
+
         case CheckEvent::FILE_DELETED:
             return QStringLiteral("  [-] Файл удалён: '%1'")
                 .arg(result.path);
