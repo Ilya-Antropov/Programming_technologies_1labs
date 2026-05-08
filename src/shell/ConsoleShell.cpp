@@ -1,4 +1,5 @@
 #include <QString>
+#include <QFileInfo>
 #include <QTextStream>
 #include "ConsoleShell.h"
 
@@ -48,6 +49,9 @@ void ConsoleShell::run() {
             cmd == QStringLiteral("list")) { handleList(); } else if (
             cmd == QStringLiteral("start")) { handleStart(); } else if (cmd == QStringLiteral("stop")) {
             handleStop();
+        } else if (cmd == QStringLiteral("help")
+                   || cmd == QStringLiteral("?")) {
+            printHelp();
         } else if (cmd == QStringLiteral("quit")
                    || cmd == QStringLiteral("exit")) {
             handleStop();
@@ -155,17 +159,17 @@ void ConsoleShell::handleStop() {
 }
 
 void ConsoleShell::printHelp() {
-    QTextStream out(stdout);
-    out << "\n"
-        << "  ╔══════════════════════════════════════╗\n"
-        << "  ║        FileMonitor — Команды         ║\n"
-        << "  ╠══════════════════════════════════════╣\n"
-        << "  ║  add <путь>    — добавить файл       ║\n"
-        << "  ║  remove <путь> — удалить файл        ║\n"
-        << "  ║  list          — список файлов       ║\n"
-        << "  ║  start         — запустить опрос     ║\n"
-        << "  ║  stop          — остановить опрос    ║\n"
-        << "  ║  quit          — выход               ║\n"
-        << "  ╚══════════════════════════════════════╝\n";
-    out.flush();
+    printf("\n"
+        "  ╔═══════════════════════════════════════╗\n"
+        "  ║      FileMonitor — Команды            ║\n"
+        "  ╠═══════════════════════════════════════╣\n"
+        "  ║  help ?        — эта справка          ║\n"
+        "  ║  add <путь>    — добавить файл        ║\n"
+        "  ║  remove <путь> — удалить файл         ║\n"
+        "  ║  list          — список файлов        ║\n"
+        "  ║  start         — запустить опрос      ║\n"
+        "  ║  stop          — остановить опрос     ║\n"
+        "  ║  quit          — выход                ║\n"
+        "  ╚═══════════════════════════════════════╝\n\n");
+    fflush(stdout);
 }
