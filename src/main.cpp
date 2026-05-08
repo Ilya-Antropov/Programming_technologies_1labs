@@ -1,66 +1,39 @@
 #include <QCoreApplication>
-#include <QTimer>
-#include <QFile>
-#include "logger/AppLogger.h"
 #include "config/AppConfig.h"
+#include "logger/AppLogger.h"
 #include "checker/ExistenceWatcher.h"
 #include "checker/SizeWatcher.h"
 #include "checker/RestorationWatcher.h"
 #include "notifier/ConsoleNotifier.h"
 #include "monitor/FileMonitor.h"
-#include "monitor/PollWorker.h"
+#include "shell/ConsoleShell.h"
+#include <clocale>
 
-// реализация для проверки чисто (можно не смотреть)
 int main(int argc, char* argv[]) {
+    std::setlocale(LC_ALL, "en_US.UTF-8");
+    
     QCoreApplication app(argc, argv);
 
-    auto& logger = AppLogger::instance();
-    logger.setLevel(LogLevel::DEBUG_LVL);
-    logger.info("Программа запущена");
+    AppConfig::instance().load(QStringLiteral("config.ini"));
 
-    auto& config = AppConfig::instance();
-    config.load("config.ini");
-    int pollInterval = config.pollIntervalMs();
-    logger.debug("Интервал опроса: " + QString::number(config.pollIntervalMs()));
+    const QString lvl = AppConfig::instance().logLevel();
+    if (lvl == "DEBUG") AppLogger::instance().setLevel(LogLevel::DEBUG_LVL);
+    else if (lvl == "WARNING") AppLogger::instance().setLevel(LogLevel::WARNING);
+    else AppLogger::instance().setLevel(LogLevel::INFO);
+
+    AppLogger::instance().info(QStringLiteral("=== FileMonitor v1.0 ==="));
+
+    ConsoleNotifier notifier;
 
     FileMonitor monitor;
-
     monitor.addChecker(std::make_unique<ExistenceWatcher>());
     monitor.addChecker(std::make_unique<SizeWatcher>());
     monitor.addChecker(std::make_unique<RestorationWatcher>());
-
-    ConsoleNotifier notifier;
     monitor.setNotifier(&notifier);
 
-    const QStringList watchedFiles = {"test.txt", "test2.txt"};
-    for (const QString& path : watchedFiles) {
-        QFile file(path);
-        if (!file.exists()) {
-            logger.warning("Файл " + path + " не существует, создаём пустой");
-            if (!file.open(QIODevice::WriteOnly)) {
-                logger.error("Не удалось создать файл " + path);
-                return 1;
-            }
-            file.close();
-        }
-        if (!monitor.addFile(path)) {
-            logger.error("Не удалось добавить файл в мониторинг: " + path);
-        }
-    }
+    const int interval = AppConfig::instance().pollIntervalMs();
+    ConsoleShell shell(&monitor, &notifier, interval);
+    shell.run();
 
-    QObject::connect(&monitor, &FileMonitor::watchListBecameEmpty,
-                     [&]() {
-                         logger.info("Список файлов пуст, завершаем работу");
-                         QCoreApplication::quit();
-                     });
-
-    PollWorker worker([&]() { monitor.pollOnce(); }, pollInterval);
-    worker.start();
-    logger.info("Мониторинг запущен через FileMonitor и PollWorker");
-
-    QTimer::singleShot(60000, &app, &QCoreApplication::quit);
-    int ret = app.exec();
-    worker.stop();
-
-    return ret;
+    return 0;
 }
