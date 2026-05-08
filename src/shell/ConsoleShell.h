@@ -18,7 +18,21 @@ public:
 
     ~ConsoleShell() override = default;
 
+    void run();
+
 private:
+    void handleAdd(const QString& path);
+
+    void handleRemove(const QString& path);
+
+    void handleList();
+
+    void handleStart();
+
+    void handleStop();
+
+    void printHelp();
+
     FileMonitor* m_monitor;
     INotifier* m_notifier;
     std::unique_ptr<PollWorker> m_pollWorker;

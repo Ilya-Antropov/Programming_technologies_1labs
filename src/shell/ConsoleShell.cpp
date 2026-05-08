@@ -1,8 +1,9 @@
-#include "ConsoleShell.h"
+#include <QString>
 #include <QTextStream>
+#include "ConsoleShell.h"
 
 ConsoleShell::ConsoleShell(FileMonitor* monitor,
-                           INotifier* notifier,
+                           IntNotifier* notifier,
                            int pollMs,
                            QObject* parent)
     : QObject(parent)
@@ -18,4 +19,45 @@ ConsoleShell::ConsoleShell(FileMonitor* monitor,
                              out.flush();
                          }
                      });
+}
+
+void ConsoleShell::run() {
+    printHelp();
+
+    QTextStream in(stdin);
+    QTextStream out(stdout);
+
+    while (true) {
+        out << "\n> ";
+        out.flush();
+
+        const QString line = in.readLine().trimmed();
+        if (line.isNull()) { break; }
+        if (line.isEmpty()) { continue; }
+
+        const int spaceIdx = line.indexOf(' ');
+        const QString cmd = (spaceIdx >= 0)
+                                ? line.left(spaceIdx).toLower()
+                                : line.toLower();
+        const QString arg = (spaceIdx >= 0)
+                                ? line.mid(spaceIdx + 1).trimmed()
+                                : QString{};
+
+        // команды реализую чуть позже
+        if (cmd == QStringLiteral("add")) { handleAdd(arg); } else if (
+            cmd == QStringLiteral("remove")) { handleRemove(arg); } else if (
+            cmd == QStringLiteral("list")) { handleList(); } else if (
+            cmd == QStringLiteral("start")) { handleStart(); } else if (cmd == QStringLiteral("stop")) {
+            handleStop();
+        } else if (cmd == QStringLiteral("quit")
+                   || cmd == QStringLiteral("exit")) {
+            handleStop();
+            out << "  Мы закончили\n";
+            out.flush();
+            break;
+        } else {
+            out << "  Неизвестная команда -> Введите 'help'\n";
+            out.flush();
+        }
+    }
 }
